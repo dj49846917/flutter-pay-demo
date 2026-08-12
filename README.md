@@ -1,6 +1,8 @@
 # CryptoPay
 
-面向企业的托管型数字资产支付移动客户端演示工程，基于 Flutter 3.44 / Dart 3.12，覆盖 iOS 与 Android。工程包含登录注册、首页、交易、活动、Invoice、法币出金、批量付款、充值、提现、换币、用户中心和审批。
+面向企业的托管型数字资产支付客户端演示工程，基于 Flutter 3.44 / Dart 3.12，覆盖 iOS、Android 与 Web 预览。工程包含登录注册、首页、交易、活动、Invoice、法币出金、批量付款、充值、提现、换币、用户中心和审批。
+
+在线演示：<https://dj49846917.github.io/flutter-pay-demo/>
 
 > 当前 Repository 为 Mock 实现。真实资金、签名、KYC/KYB、KYT/AML、报价、账本、审批执行与链上广播必须由合规后端负责；不要把生产私钥或托管签名逻辑放进客户端。
 
@@ -8,7 +10,7 @@
 
 | 类别 | 技术 | 用途 |
 |---|---|---|
-| 客户端框架 | Flutter 3.44.x、Dart 3.12.x | iOS、Android 共用 UI 与业务代码 |
+| 客户端框架 | Flutter 3.44.x、Dart 3.12.x | iOS、Android 与 Web 共用 UI 和业务代码 |
 | UI | Material 3、自定义 Design Tokens | 浅色/深色主题、企业支付视觉体系 |
 | 状态管理 | Riverpod 3.4.x | 依赖注入、异步数据、加载/错误状态和刷新 |
 | 路由 | go_router 17.x | 登录流程、底部多导航栈、详情页和深链基础 |
@@ -105,6 +107,8 @@ docs/                     # 产品、架构、安全、运行、部署和上架�
 test/                     # Widget 测试
 android/                  # Android 原生工程
 ios/                      # iOS 原生工程
+web/                      # Web 启动页、PWA Manifest 和站点图标
+.github/workflows/        # GitHub Pages 自动构建与部署
 ```
 
 ## 快速开始
@@ -130,6 +134,14 @@ flutter emulators --launch Medium_Phone_API_36.1
 flutter devices
 flutter run -d <android-device-id>
 ```
+
+### Chrome / Web
+
+```bash
+flutter run -d chrome
+```
+
+GitHub Pages 会在 `main` 分支推送后自动部署。完整说明见 [Web 预览与 GitHub Pages 部署](docs/WEB_DEPLOYMENT.md)。
 
 如果连接了多个设备，请使用 `flutter devices` 输出中的设备 ID：
 
@@ -165,5 +177,6 @@ flutter test
 - [Storybook 说明](docs/STORYBOOK.md)
 - [iOS/Android 本地运行](docs/RUNNING.md)
 - [iOS/Android 部署](docs/DEPLOYMENT.md)
+- [Web 预览与 GitHub Pages 部署](docs/WEB_DEPLOYMENT.md)
 - [App Store、应用宝与华为应用市场上架](docs/STORE_SUBMISSION.md)
 - [鸿蒙适配](docs/HARMONYOS.md)
