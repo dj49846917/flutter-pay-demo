@@ -18,7 +18,8 @@ class HomeScreen extends ConsumerWidget {
         title: const BrandMark(),
         actions: [
           IconButton(
-            onPressed: () {},
+            tooltip: '通知中心',
+            onPressed: () => context.push('/notifications'),
             icon: const Icon(Icons.notifications_none),
           ),
           const SizedBox(width: 8),
@@ -283,6 +284,79 @@ class _AssetTile extends StatelessWidget {
           ),
         ),
       ],
+    ),
+  );
+}
+
+class NotificationsScreen extends StatefulWidget {
+  const NotificationsScreen({super.key});
+
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  final unread = <int>{0, 1};
+  static final items = <(IconData, String, String, String)>[
+    (
+      Icons.approval_outlined,
+      '新的审批请求',
+      'Marcus 提交了一笔 8,200 USDC 法币出金。',
+      '10 分钟前',
+    ),
+    (Icons.south_west, 'BTC 充值已到账', '0.12 BTC 已达到网络确认数并计入余额。', '4 小时前'),
+    (Icons.security_outlined, '新设备登录', 'Chrome on macOS 在上海登录了企业账户。', '昨天'),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('通知中心'),
+      actions: [
+        TextButton(
+          onPressed: unread.isEmpty
+              ? null
+              : () => setState(() => unread.clear()),
+          child: const Text('全部已读'),
+        ),
+      ],
+    ),
+    body: ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return Card(
+          color: unread.contains(index)
+              ? AppColors.primary.withValues(alpha: .06)
+              : null,
+          child: ListTile(
+            onTap: () => setState(() => unread.remove(index)),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primary.withValues(alpha: .1),
+              child: Icon(item.$1, color: AppColors.primary),
+            ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.$2,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (unread.contains(index))
+                  const Icon(Icons.circle, size: 9, color: AppColors.primary),
+              ],
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Text('${item.$3}\n${item.$4}'),
+            ),
+            isThreeLine: true,
+          ),
+        );
+      },
     ),
   );
 }

@@ -3,6 +3,7 @@ import 'package:crypto_pay/features/auth/auth.dart';
 import 'package:crypto_pay/features/home/home.dart';
 import 'package:crypto_pay/features/payments/payments.dart';
 import 'package:crypto_pay/features/profile/profile.dart';
+import 'package:crypto_pay/features/profile/profile_detail.dart';
 import 'package:crypto_pay/features/transactions/transactions.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -81,6 +82,15 @@ final appRouter = GoRouter(
           OperationScreen(type: state.pathParameters['type']!),
     ),
     GoRoute(path: '/activities', builder: (_, __) => const ActivitiesScreen()),
+    GoRoute(
+      path: '/notifications',
+      builder: (_, __) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/profile/:section',
+      builder: (_, state) =>
+          ProfileSectionScreen(section: state.pathParameters['section']!),
+    ),
   ],
 );
 

@@ -23,7 +23,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         title: const Text('交易记录'),
         actions: [
           IconButton(
-            onPressed: () {},
+            tooltip: '导出交易记录',
+            onPressed: _showExportSheet,
             icon: const Icon(Icons.download_outlined),
           ),
         ],
@@ -76,6 +77,49 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _showExportSheet() async {
+    final format = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '导出交易记录',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              Text('当前筛选：$filter · 时间范围：最近 30 天'),
+              const SizedBox(height: 12),
+              ListTile(
+                onTap: () => Navigator.pop(context, 'CSV'),
+                leading: const Icon(Icons.table_view_outlined),
+                title: const Text('导出 CSV'),
+                subtitle: const Text('适合表格软件和财务系统'),
+              ),
+              ListTile(
+                onTap: () => Navigator.pop(context, 'PDF'),
+                leading: const Icon(Icons.picture_as_pdf_outlined),
+                title: const Text('导出 PDF 对账单'),
+                subtitle: const Text('包含企业信息与汇总数据'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (format == null || !mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$format 导出任务已创建，完成后将发送到工作邮箱（演示）')));
   }
 }
 

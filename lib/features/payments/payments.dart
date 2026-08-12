@@ -3,6 +3,7 @@ import 'package:crypto_pay/data/repository.dart';
 import 'package:crypto_pay/shared/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -110,10 +111,18 @@ class OperationScreen extends StatefulWidget {
 }
 
 class _OperationScreenState extends State<OperationScreen> {
+  final formKey = GlobalKey<FormState>();
   String asset = 'USDT';
+  String targetAsset = 'USDC';
+  String network = 'Ethereum';
+  String bankAccount = 'HSBC •• 8841';
   bool submitted = false;
+  bool quoteReady = false;
+  String? selectedFile;
   final amount = TextEditingController();
   final destination = TextEditingController();
+
+  static const depositAddress = '0x71bc9e2f7d39a3e8c8f43a2c74df';
 
   @override
   void dispose() {
@@ -137,89 +146,207 @@ class _OperationScreenState extends State<OperationScreen> {
           if (submitted)
             _Success(type: meta.$1)
           else
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: asset,
-                      decoration: const InputDecoration(labelText: '资产'),
-                      items: ['USDT', 'USDC', 'BTC', 'ETH']
-                          .map(
-                            (item) => DropdownMenuItem(
-                              value: item,
-                              child: Text(item),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) => setState(() => asset = value!),
-                    ),
-                    const SizedBox(height: 14),
-                    if (deposit) ...[
-                      Center(
-                        child: QrImageView(
-                          data:
-                              'cryptopay:$asset:0x71bc9e2f7d39a3e8c8f43a2c74df',
-                          size: 190,
-                          eyeStyle: const QrEyeStyle(color: AppColors.ink),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const SelectableText(
-                        '0x71bc9e2f7d39a3e8c8f43a2c74df',
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        '仅向此地址充值所选资产。错误网络或资产可能无法找回。',
-                        textAlign: TextAlign.center,
-                      ),
-                    ] else ...[
-                      TextFormField(
-                        controller: amount,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: widget.type == 'invoice'
-                              ? 'Invoice 金额'
-                              : '金额',
-                          suffixText: asset,
-                        ),
+            Form(
+              key: formKey,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: asset,
+                        decoration: const InputDecoration(labelText: '资产'),
+                        items: ['USDT', 'USDC', 'BTC', 'ETH']
+                            .map(
+                              (item) => DropdownMenuItem(
+                                value: item,
+                                child: Text(item),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) => setState(() {
+                          asset = value!;
+                          if (targetAsset == asset) {
+                            targetAsset = asset == 'USDT' ? 'USDC' : 'USDT';
+                          }
+                          quoteReady = false;
+                        }),
                       ),
                       const SizedBox(height: 14),
-                      TextFormField(
-                        controller: destination,
-                        decoration: InputDecoration(
-                          labelText: _destinationLabel(widget.type),
-                          prefixIcon: const Icon(
-                            Icons.account_balance_wallet_outlined,
+                      if (deposit) ...[
+                        const SizedBox(height: 14),
+                        DropdownButtonFormField<String>(
+                          initialValue: network,
+                          decoration: const InputDecoration(labelText: '充值网络'),
+                          items: ['Ethereum', 'Tron', 'Bitcoin', 'Solana']
+                              .map(
+                                (item) => DropdownMenuItem(
+                                  value: item,
+                                  child: Text(item),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) =>
+                              setState(() => network = value!),
+                        ),
+                        const SizedBox(height: 18),
+                        Center(
+                          child: QrImageView(
+                            data: 'cryptopay:$asset:$depositAddress',
+                            size: 190,
+                            eyeStyle: const QrEyeStyle(color: AppColors.ink),
                           ),
                         ),
-                      ),
-                      if (widget.type == 'batch') ...[
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
+                        const SelectableText(
+                          depositAddress,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
                         OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.upload_file),
-                          label: const Text('上传 CSV/XLSX 付款文件'),
+                          onPressed: _copyDepositAddress,
+                          icon: const Icon(Icons.copy),
+                          label: const Text('复制充值地址'),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          '仅向此地址充值所选资产。错误网络或资产可能无法找回。',
+                          textAlign: TextAlign.center,
+                        ),
+                      ] else ...[
+                        TextFormField(
+                          controller: amount,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: InputDecoration(
+                            labelText: widget.type == 'invoice'
+                                ? 'Invoice 金额'
+                                : '金额',
+                            suffixText: asset,
+                          ),
+                          validator: (value) {
+                            final parsed = double.tryParse(value ?? '');
+                            return parsed != null && parsed > 0
+                                ? null
+                                : '请输入有效金额';
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        if (widget.type == 'swap')
+                          DropdownButtonFormField<String>(
+                            initialValue: targetAsset,
+                            decoration: const InputDecoration(
+                              labelText: '目标资产',
+                            ),
+                            items: ['USDT', 'USDC', 'BTC', 'ETH']
+                                .where((item) => item != asset)
+                                .map(
+                                  (item) => DropdownMenuItem(
+                                    value: item,
+                                    child: Text(item),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) =>
+                                setState(() => targetAsset = value!),
+                          )
+                        else if (widget.type == 'offramp')
+                          DropdownButtonFormField<String>(
+                            initialValue: bankAccount,
+                            decoration: const InputDecoration(
+                              labelText: '收款银行账户',
+                            ),
+                            items: ['HSBC •• 8841', 'DBS •• 1208']
+                                .map(
+                                  (item) => DropdownMenuItem(
+                                    value: item,
+                                    child: Text(item),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) =>
+                                setState(() => bankAccount = value!),
+                          )
+                        else
+                          TextFormField(
+                            controller: destination,
+                            keyboardType: widget.type == 'invoice'
+                                ? TextInputType.emailAddress
+                                : TextInputType.text,
+                            decoration: InputDecoration(
+                              labelText: _destinationLabel(widget.type),
+                              prefixIcon: const Icon(
+                                Icons.account_balance_wallet_outlined,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value?.trim().isEmpty ?? true) return '此项必填';
+                              if (widget.type == 'invoice' &&
+                                  !(value?.contains('@') ?? false)) {
+                                return '请输入有效客户邮箱';
+                              }
+                              return null;
+                            },
+                          ),
+                        if (widget.type == 'batch') ...[
+                          const SizedBox(height: 14),
+                          OutlinedButton.icon(
+                            onPressed: _selectBatchFile,
+                            icon: const Icon(Icons.upload_file),
+                            label: Text(selectedFile ?? '上传 CSV/XLSX 付款文件'),
+                          ),
+                          if (selectedFile == null)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 6),
+                              child: Text(
+                                '请上传付款文件',
+                                style: TextStyle(
+                                  color: AppColors.danger,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
+                        const SizedBox(height: 14),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text('预计费用'),
+                          trailing: Text(
+                            quoteReady ? '0.15% · 约 15 秒有效' : '提交后自动询价',
+                          ),
+                        ),
+                        if (quoteReady) ...[
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: .1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '报价：${amount.text} $asset ≈ ${_quotedAmount()} $targetAsset',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        const SizedBox(height: 10),
+                        FilledButton(
+                          onPressed: _submit,
+                          child: Text(
+                            widget.type == 'swap'
+                                ? quoteReady
+                                      ? '确认兑换'
+                                      : '获取实时报价'
+                                : '提交审批',
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 14),
-                      const ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text('预计费用'),
-                        trailing: Text('网络费用将在询价后显示'),
-                      ),
-                      const SizedBox(height: 10),
-                      FilledButton(
-                        onPressed: () => setState(() => submitted = true),
-                        child: Text(widget.type == 'swap' ? '获取实时报价' : '提交审批'),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -235,6 +362,85 @@ class _OperationScreenState extends State<OperationScreen> {
     'batch' => '付款批次名称',
     _ => '目标钱包地址',
   };
+
+  Future<void> _copyDepositAddress() async {
+    await Clipboard.setData(const ClipboardData(text: depositAddress));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('充值地址已复制')));
+  }
+
+  Future<void> _selectBatchFile() async {
+    final file = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              title: Text('选择付款文件'),
+              subtitle: Text('演示环境使用内置样例文件'),
+            ),
+            ListTile(
+              onTap: () =>
+                  Navigator.pop(context, 'vendor-payments-2026-08.csv'),
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('vendor-payments-2026-08.csv'),
+              subtitle: const Text('32 笔付款 · 128.4 KB'),
+            ),
+            ListTile(
+              onTap: () => Navigator.pop(context, 'payroll-august.xlsx'),
+              leading: const Icon(Icons.table_view_outlined),
+              title: const Text('payroll-august.xlsx'),
+              subtitle: const Text('18 笔付款 · 94.7 KB'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (file != null) setState(() => selectedFile = file);
+  }
+
+  Future<void> _submit() async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (widget.type == 'batch' && selectedFile == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请先选择批量付款文件')));
+      return;
+    }
+    if (widget.type == 'swap' && !quoteReady) {
+      setState(() => quoteReady = true);
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('确认提交？'),
+        content: Text(
+          '${operationMeta[widget.type]?.$1 ?? '资金'}请求将进入风控和企业审批流程。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('返回检查'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认提交'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) setState(() => submitted = true);
+  }
+
+  String _quotedAmount() {
+    final value = double.tryParse(amount.text) ?? 0;
+    return (value * .9985).toStringAsFixed(4);
+  }
 }
 
 class _Success extends StatelessWidget {

@@ -69,19 +69,51 @@ class ProfileScreen extends StatelessWidget {
         _MenuGroup(
           title: '企业与账户',
           items: [
-            _Menu('企业资料与 KYB', Icons.business_outlined, () {}),
-            _Menu('团队成员与角色', Icons.groups_outlined, () {}),
-            _Menu('银行账户', Icons.account_balance_outlined, () {}),
-            _Menu('地址簿', Icons.contact_page_outlined, () {}),
+            _Menu(
+              '企业资料与 KYB',
+              Icons.business_outlined,
+              () => context.push('/profile/company'),
+            ),
+            _Menu(
+              '团队成员与角色',
+              Icons.groups_outlined,
+              () => context.push('/profile/team'),
+            ),
+            _Menu(
+              '银行账户',
+              Icons.account_balance_outlined,
+              () => context.push('/profile/banks'),
+            ),
+            _Menu(
+              '地址簿',
+              Icons.contact_page_outlined,
+              () => context.push('/profile/address-book'),
+            ),
           ],
         ),
         _MenuGroup(
           title: '安全',
           items: [
-            _Menu('双重认证', Icons.phonelink_lock_outlined, () {}),
-            _Menu('生物识别', Icons.fingerprint, () {}),
-            _Menu('设备管理', Icons.devices_outlined, () {}),
-            _Menu('限额与审批策略', Icons.policy_outlined, () {}),
+            _Menu(
+              '双重认证',
+              Icons.phonelink_lock_outlined,
+              () => context.push('/profile/two-factor'),
+            ),
+            _Menu(
+              '生物识别',
+              Icons.fingerprint,
+              () => context.push('/profile/biometrics'),
+            ),
+            _Menu(
+              '设备管理',
+              Icons.devices_outlined,
+              () => context.push('/profile/devices'),
+            ),
+            _Menu(
+              '限额与审批策略',
+              Icons.policy_outlined,
+              () => context.push('/profile/policies'),
+            ),
           ],
         ),
         _MenuGroup(
@@ -92,9 +124,21 @@ class ProfileScreen extends StatelessWidget {
               Icons.campaign_outlined,
               () => context.push('/activities'),
             ),
-            _Menu('通知设置', Icons.notifications_outlined, () {}),
-            _Menu('帮助与支持', Icons.help_outline, () {}),
-            _Menu('关于与法律条款', Icons.info_outline, () {}),
+            _Menu(
+              '通知设置',
+              Icons.notifications_outlined,
+              () => context.push('/profile/notification-settings'),
+            ),
+            _Menu(
+              '帮助与支持',
+              Icons.help_outline,
+              () => context.push('/profile/support'),
+            ),
+            _Menu(
+              '关于与法律条款',
+              Icons.info_outline,
+              () => context.push('/profile/legal'),
+            ),
           ],
         ),
         const SizedBox(height: 8),
